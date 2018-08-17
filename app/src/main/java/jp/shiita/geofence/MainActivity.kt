@@ -3,7 +3,6 @@ package jp.shiita.geofence
 import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
@@ -11,26 +10,13 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.widget.Toast
-import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
-import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var geofencingClient: GeofencingClient
-    private val geofencePendingIntent: PendingIntent by lazy {
-        val intent = Intent(this, GeofenceTransitionsIntentService::class.java)
-        PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-    }
-    private val geofenceList = listOf(
-            Geofence.Builder()
-                    .setRequestId("myGeofence")
-                    .setCircularRegion(35.648344, 139.721337, 100f)
-                    .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
-                    .build()
-    )
+    private var beforePendingIntent: PendingIntent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         geofencingClient = LocationServices.getGeofencingClient(this)
 
         addGeofences.setOnClickListener {
-            if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
                     Log.d(TAG, "permission is denied")
                 } else {
@@ -46,7 +32,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 return@setOnClickListener
             }
-            geofencingClient.addGeofences(getGeofencingRequest(), geofencePendingIntent)?.run {
+
+            beforePendingIntent = getGeofencePendingIntent(this)
+            geofencingClient.addGeofences(getGeofencingRequest(TAG, 35.648334, 139.721371), beforePendingIntent)?.run {
                 addOnSuccessListener {
                     toast("addOnSuccess")
                     addGeofences.isEnabled = false
@@ -58,7 +46,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         removeGeofences.setOnClickListener {
-            geofencingClient.removeGeofences(geofencePendingIntent)?.run {
+            geofencingClient.removeGeofences(beforePendingIntent)?.run {
                 addOnSuccessListener {
                     toast("removeOnSuccess")
                     addGeofences.isEnabled = true
@@ -69,13 +57,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-    }
+        latlngButton.setOnClickListener {
 
-    private fun getGeofencingRequest(): GeofencingRequest =
-            GeofencingRequest.Builder()
-                    .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-                    .addGeofences(geofenceList)
-                    .build()
+        }
+    }
 
     private fun Context.toast(text: String) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
