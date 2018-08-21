@@ -1,4 +1,4 @@
-package jp.shiita.geofence
+package jp.shiita.geofence.ui
 
 import android.Manifest
 import android.app.PendingIntent
@@ -12,6 +12,9 @@ import android.util.Log
 import android.widget.Toast
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.LocationServices
+import jp.shiita.geofence.R
+import jp.shiita.geofence.getGeofencePendingIntent
+import jp.shiita.geofence.getGeofencingRequest
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {

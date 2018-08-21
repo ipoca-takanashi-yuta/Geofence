@@ -6,6 +6,7 @@ import android.content.Intent
 import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
+import jp.shiita.geofence.service.GeofenceTransitionsIntentService
 
 /**
  * Created by Yuta Takanashi on 2018/08/17.

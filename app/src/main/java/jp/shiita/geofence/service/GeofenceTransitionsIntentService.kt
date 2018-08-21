@@ -1,4 +1,4 @@
-package jp.shiita.geofence
+package jp.shiita.geofence.service
 
 import android.Manifest
 import android.app.IntentService
@@ -14,13 +14,15 @@ import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingEvent
 import com.google.android.gms.location.LocationServices
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.GET
-import retrofit2.http.Path
+import dagger.android.AndroidInjection
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.subscribeBy
+import io.reactivex.schedulers.Schedulers
+import jp.shiita.geofence.R
+import jp.shiita.geofence.data.GitHubService
+import jp.shiita.geofence.getGeofencePendingIntent
+import jp.shiita.geofence.getGeofencingRequest
+import javax.inject.Inject
 
 
 /**
@@ -30,7 +32,11 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
     private lateinit var geofencingClient: GeofencingClient
     private var beforePendingIntent: PendingIntent? = null
 
+    @Inject
+    lateinit var gitHubService: GitHubService
+
     override fun onCreate() {
+        AndroidInjection.inject(this)
         super.onCreate()
         geofencingClient = LocationServices.getGeofencingClient(this)
     }
@@ -86,42 +92,29 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
     }
 
     private fun notify(title: String) {
-        val retrofit = Retrofit.Builder()
-                .baseUrl("https://api.github.com/")
-                .addConverterFactory(GsonConverterFactory.create())
+        gitHubService.getRepos("shiita0903")
+                .observeOn(Schedulers.io())
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                        onError = { Log.d(TAG, "onError") },
+                        onSuccess = {
+                            Log.d(TAG, "onSuccess")
+                            val text = it?.get(0)?.name ?: ""
+                            buildNotification(title, text)
+                        }
+                )
+    }
+
+    private fun buildNotification(title: String, text: String) {
+        val notification = NotificationCompat.Builder(this@GeofenceTransitionsIntentService)
+                .setStyle(NotificationCompat.BigTextStyle())
+                .setSmallIcon(R.drawable.notification_icon_background)
+                .setContentTitle(title)
+                .setContentText(text)
                 .build()
-        val service = retrofit.create(GitHubService::class.java)
-        val repoCall = service.listRepos("shiita0903")
-        repoCall.enqueue(object : Callback<List<Repo>> {
-            override fun onFailure(call: Call<List<Repo>>?, t: Throwable?) {}
-
-            override fun onResponse(call: Call<List<Repo>>?, response: Response<List<Repo>>) {
-                val text = response.body()?.get(0)?.name
-
-                val notification = NotificationCompat.Builder(this@GeofenceTransitionsIntentService)
-                        .setStyle(NotificationCompat.BigTextStyle())
-                        .setSmallIcon(R.drawable.notification_icon_background)
-                        .setContentTitle(title)
-                        .setContentText(text)
-                        .build()
-                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.notify(1111, notification)
-            }
-        })
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(1111, notification)
     }
-
-    interface GitHubService {
-        @GET("users/{user}/repos")
-        fun listRepos(@Path("user") user: String): Call<List<Repo>>
-    }
-
-    data class Repo(
-        val id: String = "",
-        val name: String = "",
-        val fullName: String = "",
-        val url: String = "",
-        val description: String = ""
-    )
 
     companion object {
         private val TAG = GeofenceTransitionsIntentService::class.java.simpleName
