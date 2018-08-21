@@ -15,11 +15,10 @@ import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingEvent
 import com.google.android.gms.location.LocationServices
 import dagger.android.AndroidInjection
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiita.geofence.R
-import jp.shiita.geofence.data.GitHubService
+import jp.shiita.geofence.data.GithubRepository
 import jp.shiita.geofence.getGeofencePendingIntent
 import jp.shiita.geofence.getGeofencingRequest
 import javax.inject.Inject
@@ -33,7 +32,7 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
     private var beforePendingIntent: PendingIntent? = null
 
     @Inject
-    lateinit var gitHubService: GitHubService
+    lateinit var gitHubRepository: GithubRepository
 
     override fun onCreate() {
         AndroidInjection.inject(this)
@@ -57,7 +56,7 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
             Geofence.GEOFENCE_TRANSITION_ENTER -> {
                 notify("Enter\n$geofences\n$locString")
                 Log.d(TAG, "Enter\n$geofences\n$locString")
-                resetGeofences(location.latitude, location.longitude)
+//                resetGeofences(location.latitude, location.longitude)
             }
             Geofence.GEOFENCE_TRANSITION_EXIT -> {
                 notify("Exit\n$geofences\n$locString")
@@ -92,11 +91,10 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
     }
 
     private fun notify(title: String) {
-        gitHubService.getRepos("shiita0903")
-                .observeOn(Schedulers.io())
-                .subscribeOn(AndroidSchedulers.mainThread())
+        gitHubRepository.getRepos("shiita0903")
+                .subscribeOn(Schedulers.io())
                 .subscribeBy(
-                        onError = { Log.d(TAG, "onError") },
+                        onError = { Log.e(TAG, "onError", it) },
                         onSuccess = {
                             Log.d(TAG, "onSuccess")
                             val text = it?.get(0)?.name ?: ""

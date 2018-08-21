@@ -12,16 +12,25 @@ import android.util.Log
 import android.widget.Toast
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.LocationServices
+import dagger.android.AndroidInjection
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.subscribeBy
+import io.reactivex.schedulers.Schedulers
 import jp.shiita.geofence.R
+import jp.shiita.geofence.data.HeartRailsRepository
 import jp.shiita.geofence.getGeofencePendingIntent
 import jp.shiita.geofence.getGeofencingRequest
 import kotlinx.android.synthetic.main.activity_main.*
+import javax.inject.Inject
 
 class MainActivity : AppCompatActivity() {
     private lateinit var geofencingClient: GeofencingClient
     private var beforePendingIntent: PendingIntent? = null
+    @Inject
+    lateinit var heartRailsRepository: HeartRailsRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AndroidInjection.inject(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         geofencingClient = LocationServices.getGeofencingClient(this)
@@ -61,7 +70,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
         latlngButton.setOnClickListener {
-
+            heartRailsRepository.getGeolocations(35.648334, 139.721371)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeBy(
+                            onError = { Log.e(TAG, "onError", it) },
+                            onSuccess = {
+                                townInfo.text = it.map { it.address }.joinToString(separator = "\n")
+                            }
+                    )
         }
     }
 

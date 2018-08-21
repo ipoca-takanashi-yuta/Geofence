@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import jp.shiita.geofence.data.GitHubService
+import jp.shiita.geofence.data.HeartRailsService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -32,14 +33,20 @@ class ApiModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(gson: Gson, okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-            .addConverterFactory(GsonConverterFactory.create(gson))
-            .baseUrl("https://api.github.com/")
-            .client(okHttpClient)
-            .build()
+    fun providesGitHubService(gson: Gson, okHttpClient: OkHttpClient): GitHubService =
+            getRetrofit("https://api.github.com/", gson, okHttpClient)
+                    .create(GitHubService::class.java)
 
     @Provides
     @Singleton
-    fun providesGitHubService(retrofit: Retrofit): GitHubService = retrofit.create(GitHubService::class.java)
+    fun provideHeartRailsService(gson: Gson, okHttpClient: OkHttpClient): HeartRailsService =
+            getRetrofit("http://geoapi.heartrails.com/api/", gson, okHttpClient)
+                    .create(HeartRailsService::class.java)
+
+    private fun getRetrofit(baseUrl: String, gson: Gson, okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .client(okHttpClient)
+            .baseUrl(baseUrl)
+            .build()
 }

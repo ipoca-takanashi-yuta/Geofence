@@ -27,8 +27,8 @@ fun getGeofencingRequest(tag: String, lat: Double, lng: Double): GeofencingReque
 }
 
 private fun getGeofenceList(lat: Double, lng: Double): Pair<List<Geofence>, List<Pair<Double, Double>>> {
-    val dLat = arrayOf(0.01, 0.0, -0.01, 0.0)
-    val dLng = arrayOf(0.0, 0.01, 0.0, -0.01)
+    val dLat = arrayOf(0.0, 0.01, 0.0, -0.01, 0.0)
+    val dLng = arrayOf(0.0, 0.0, 0.01, 0.0, -0.01)
     return dLat.zip(dLng).mapIndexed { i, (la, ln) ->
         val cLat = lat + la
         val cLng = lng + ln
