@@ -1,35 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".ui.MainActivity">
 
-    <Button
-        android:id="@+id/addGeofences"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="add geofences"/>
-
-    <Button
-        android:id="@+id/removeGeofences"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:enabled="false"
-        android:text="remove geofences"/>
-
-    <Button
-        android:id="@+id/latlngButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="位置"/>
-
-    <TextView
-        android:id="@+id/townInfo"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        tools:text="Town info"/>
-</LinearLayout>
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/addGeofences"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="add geofences"/>
+
+        <Button
+            android:id="@+id/removeGeofences"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="remove geofences"/>
+
+        <Button
+            android:id="@+id/latlngButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="位置"/>
+
+        <TextView
+            android:id="@+id/townInfo"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            tools:text="Town info"/>
+
+        <ImageView
+            android:id="@+id/townImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</ScrollView>

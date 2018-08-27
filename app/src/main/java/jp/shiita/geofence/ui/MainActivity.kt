@@ -9,7 +9,9 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.view.View
 import android.widget.Toast
+import com.bumptech.glide.Glide
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.LocationServices
 import dagger.android.AndroidInjection
@@ -18,6 +20,7 @@ import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiita.geofence.R
 import jp.shiita.geofence.data.HeartRailsRepository
+import jp.shiita.geofence.data.PixabayRepository
 import jp.shiita.geofence.getGeofencePendingIntent
 import jp.shiita.geofence.getGeofencingRequest
 import kotlinx.android.synthetic.main.activity_main.*
@@ -28,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private var beforePendingIntent: PendingIntent? = null
     @Inject
     lateinit var heartRailsRepository: HeartRailsRepository
+    @Inject
+    lateinit var pixabayRepository: PixabayRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
@@ -76,10 +81,36 @@ class MainActivity : AppCompatActivity() {
                     .subscribeBy(
                             onError = { Log.e(TAG, "onError", it) },
                             onSuccess = {
-                                townInfo.text = it.map { it.address }.joinToString(separator = "\n")
+                                val geolocation = it.first()
+                                searchImage(geolocation.city)
+                                townInfo.text = geolocation.address
                             }
                     )
         }
+    }
+
+    private fun searchImage(query: String) {
+        pixabayRepository.serarchImage(query)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                        onError = { Log.e(TAG, "onError", it) },
+                        onSuccess = { imageInfoList ->
+                            imageInfoList.firstOrNull()?.let {
+                                val url = when {
+                                    !it.imageURL.isEmpty()      -> it.imageURL
+                                    !it.largeImageURL.isEmpty() -> it.largeImageURL
+                                    else                        -> {
+                                        toast("画像が見つかりませんでした")
+                                        return@let
+                                    }
+                                }
+                                Glide.with(this)
+                                        .load(url)
+                                        .into(townImage)
+                            }
+                        }
+                )
     }
 
     private fun Context.toast(text: String) {

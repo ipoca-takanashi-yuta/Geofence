@@ -3,10 +3,7 @@ package jp.shiita.geofence.module
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
-import jp.shiita.geofence.data.GitHubService
-import jp.shiita.geofence.data.GithubRepository
-import jp.shiita.geofence.data.HeartRailsRepository
-import jp.shiita.geofence.data.HeartRailsService
+import jp.shiita.geofence.data.*
 import javax.inject.Singleton
 
 /**
@@ -21,4 +18,8 @@ class RepositoryModule {
     @Provides
     @Singleton
     fun provideHeartRailsRepository(heartRailsService: HeartRailsService, gson: Gson) = HeartRailsRepository(heartRailsService, gson)
+
+    @Provides
+    @Singleton
+    fun providePixabayRepository(pixabayService: PixabayService) = PixabayRepository(pixabayService, Gson())
 }

@@ -7,6 +7,7 @@ import dagger.Module
 import dagger.Provides
 import jp.shiita.geofence.data.GitHubService
 import jp.shiita.geofence.data.HeartRailsService
+import jp.shiita.geofence.data.PixabayService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -42,6 +43,11 @@ class ApiModule {
     fun provideHeartRailsService(gson: Gson, okHttpClient: OkHttpClient): HeartRailsService =
             getRetrofit("http://geoapi.heartrails.com/api/", gson, okHttpClient)
                     .create(HeartRailsService::class.java)
+    @Provides
+    @Singleton
+    fun providePixabayService(okHttpClient: OkHttpClient): PixabayService =
+            getRetrofit("https://pixabay.com/api/", Gson(), okHttpClient)
+                    .create(PixabayService::class.java)
 
     private fun getRetrofit(baseUrl: String, gson: Gson, okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())

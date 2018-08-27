@@ -106,7 +106,7 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
     private fun buildNotification(title: String, text: String) {
         val notification = NotificationCompat.Builder(this@GeofenceTransitionsIntentService)
                 .setStyle(NotificationCompat.BigTextStyle())
-                .setSmallIcon(R.drawable.notification_icon_background)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(title)
                 .setContentText(text)
                 .build()

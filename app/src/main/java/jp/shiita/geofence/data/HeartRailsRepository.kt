@@ -8,12 +8,12 @@ import io.reactivex.Single
  */
 class HeartRailsRepository(
         private val heartRailsService: HeartRailsService,
-        private val gson: Gson) {
-
+        private val gson: Gson
+) {
     fun getGeolocations(lat: Double, lng: Double): Single<List<Geolocation>> =
             heartRailsService.getGeolocations(lat, lng)
-                    .map {
-                        it.getAsJsonObject("response")
+                    .map { json ->
+                        json.getAsJsonObject("response")
                                 .getAsJsonArray("location")
                                 .map { gson.fromJson(it, Geolocation::class.java) }
                     }
