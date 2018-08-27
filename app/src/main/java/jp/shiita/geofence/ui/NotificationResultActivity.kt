@@ -9,11 +9,12 @@ import kotlinx.android.synthetic.main.activity_notification_result.*
 
 class NotificationResultActivity : AppCompatActivity() {
     private val urls: ArrayList<String> by lazy { intent.getStringArrayListExtra(URLS) ?: arrayListOf() }
+    private val location: String by lazy { intent.getStringExtra(LOCATION) ?: "" }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_notification_result)
-        title = "現在地の画像"
+        title = "${location}の画像"
 
         urls.zip((1..urls.size).map { ImageView(this) }).forEach { (url, imageView) ->
             Glide.with(this)
@@ -25,5 +26,6 @@ class NotificationResultActivity : AppCompatActivity() {
 
     companion object {
         const val URLS = "urls"
+        const val LOCATION = "location"
     }
 }

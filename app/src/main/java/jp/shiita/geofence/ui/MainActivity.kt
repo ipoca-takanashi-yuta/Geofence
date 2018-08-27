@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.location.Location
+import android.location.LocationListener
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -32,9 +34,10 @@ import jp.shiita.geofence.getGeofencingRequest
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), LocationListener {
     private lateinit var geofencingClient: GeofencingClient
     private var beforePendingIntent: PendingIntent? = null
+    private var location: Location? = null
 
     @Inject lateinit var heartRailsRepository: HeartRailsRepository
     @Inject lateinit var pixabayRepository: PixabayRepository
@@ -44,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         geofencingClient = LocationServices.getGeofencingClient(this)
+//        val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
 
         addGeofences.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -55,8 +59,17 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+//            if (location == null) {
+//                toast("位置情報が取得できていません")
+//                return@setOnClickListener
+//            }
+//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 50f, this)
+
+            val lat = latEdit.text.toString().toDoubleOrNull() ?: 35.648334
+            val lng = lngEdit.text.toString().toDoubleOrNull() ?: 139.721371
+
             beforePendingIntent = getGeofencePendingIntent(this)
-            geofencingClient.addGeofences(getGeofencingRequest(TAG, 35.648334, 139.721371), beforePendingIntent)?.run {
+            geofencingClient.addGeofences(getGeofencingRequest(TAG, lat, lng, this), beforePendingIntent)?.run {
                 addOnSuccessListener {
                     toast("addOnSuccess")
                     addGeofences.isEnabled = false
@@ -98,6 +111,16 @@ class MainActivity : AppCompatActivity() {
                     )
         }
     }
+
+    override fun onLocationChanged(location: Location?) {
+        this.location = location
+    }
+
+    override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?) {}
+
+    override fun onProviderEnabled(p0: String?) {}
+
+    override fun onProviderDisabled(p0: String?) {}
 
     private fun searchImage(queries: List<String>) {
         pixabayRepository.serarchImage(queries[0])

@@ -2,12 +2,9 @@ package jp.shiita.geofence.service
 
 import android.Manifest
 import android.app.IntentService
-import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.support.v4.app.NotificationCompat
 import android.support.v4.app.TaskStackBuilder
 import android.support.v4.content.ContextCompat
 import android.util.Log
@@ -19,12 +16,13 @@ import dagger.android.AndroidInjection
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
-import jp.shiita.geofence.R
+import jp.shiita.geofence.buildNotification
 import jp.shiita.geofence.data.HeartRailsRepository
 import jp.shiita.geofence.data.PixabayRepository
 import jp.shiita.geofence.getGeofencePendingIntent
 import jp.shiita.geofence.getGeofencingRequest
 import jp.shiita.geofence.ui.NotificationResultActivity
+import java.util.*
 import javax.inject.Inject
 
 
@@ -60,7 +58,7 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
             Geofence.GEOFENCE_TRANSITION_ENTER -> {
                 Log.d(TAG, "Enter\n$geofences\n$locString")
                 searchGeolocation(location.latitude, location.longitude)
-                // resetGeofences(location.latitude, location.longitude)
+                resetGeofences(location.latitude, location.longitude)
             }
             Geofence.GEOFENCE_TRANSITION_EXIT  -> Log.d(TAG, "Exit\n$geofences\n$locString")
             Geofence.GEOFENCE_TRANSITION_DWELL -> Log.d(TAG, "Dwell\n$geofences\n$locString")
@@ -78,7 +76,7 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
         }
         beforePendingIntent = getGeofencePendingIntent(this)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            geofencingClient.addGeofences(getGeofencingRequest(TAG, lat, lng), beforePendingIntent)?.run {
+            geofencingClient.addGeofences(getGeofencingRequest(TAG, lat, lng, this), beforePendingIntent)?.run {
                 addOnSuccessListener { Log.d(TAG, "addOnSuccess") }
                 addOnFailureListener { Log.d(TAG, "addOnFailure") }
             }
@@ -93,12 +91,12 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
                         onError = { Log.e(TAG, "onError", it) },
                         onSuccess = {
                             val geolocation = it.first()
-                            searchImage(listOf(geolocation.town, geolocation.city, geolocation.prefecture))
+                            searchImage("($lat, $lng)", listOf(geolocation.town, geolocation.city, geolocation.prefecture))
                         }
                 )
     }
 
-    private fun searchImage(queries: List<String>) {
+    private fun searchImage(location: String, queries: List<String>) {
         pixabayRepository.serarchImage(queries[0])
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -107,7 +105,7 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
                         onSuccess = { imageInfoList ->
                             if (imageInfoList.isEmpty()) {
                                 if (queries.size > 1) {
-                                    searchImage(queries.drop(1))    // クエリを変えて再検索
+                                    searchImage(location, queries.drop(1))    // クエリを変えて再検索
                                 }
                                 return@subscribeBy
                             }
@@ -120,31 +118,20 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
                                         }}
                                     .filter { it.isNotEmpty() }
                                     .take(5)
-                            notify(urls)
+                            notify(queries[0], location, urls)
                         }
                 )
     }
 
-    private fun notify(urls: List<String>) {
+    private fun notify(query: String, location: String, urls: List<String>) {
         val intent = Intent(this, NotificationResultActivity::class.java).apply {
             putStringArrayListExtra(NotificationResultActivity.URLS, ArrayList(urls))
+            putExtra(NotificationResultActivity.LOCATION, query)
         }
         val stackBuilder = TaskStackBuilder.create(this).apply { addNextIntentWithParentStack(intent) }
         val pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
 
-        buildNotification("Geofence", "Enter", pendingIntent)
-    }
-
-    private fun buildNotification(title: String, text: String, pendingIntent: PendingIntent) {
-        val notification = NotificationCompat.Builder(this@GeofenceTransitionsIntentService)
-                .setStyle(NotificationCompat.BigTextStyle())
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(title)
-                .setContentText(text)
-                .setContentIntent(pendingIntent)
-                .build()
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(1111, notification)
+        buildNotification(query, location, pendingIntent, this)
     }
 
     companion object {

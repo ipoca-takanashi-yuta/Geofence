@@ -7,11 +7,30 @@
     android:orientation="vertical"
     tools:context=".ui.MainActivity">
 
-    <Button
-        android:id="@+id/addGeofences"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="add geofences"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/addGeofences"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="add geofences"/>
+
+        <EditText
+            android:id="@+id/latEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="lat"/>
+
+        <EditText
+            android:id="@+id/lngEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="lng"/>
+    </LinearLayout>
 
     <Button
         android:id="@+id/removeGeofences"
