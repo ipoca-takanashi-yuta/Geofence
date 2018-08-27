@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.support.v4.app.NotificationCompat
+import android.support.v4.app.TaskStackBuilder
 import android.support.v4.content.ContextCompat
 import android.util.Log
 import com.google.android.gms.location.Geofence
@@ -15,12 +16,15 @@ import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingEvent
 import com.google.android.gms.location.LocationServices
 import dagger.android.AndroidInjection
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiita.geofence.R
-import jp.shiita.geofence.data.GithubRepository
+import jp.shiita.geofence.data.HeartRailsRepository
+import jp.shiita.geofence.data.PixabayRepository
 import jp.shiita.geofence.getGeofencePendingIntent
 import jp.shiita.geofence.getGeofencingRequest
+import jp.shiita.geofence.ui.NotificationResultActivity
 import javax.inject.Inject
 
 
@@ -31,8 +35,8 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
     private lateinit var geofencingClient: GeofencingClient
     private var beforePendingIntent: PendingIntent? = null
 
-    @Inject
-    lateinit var gitHubRepository: GithubRepository
+    @Inject lateinit var heartRailsRepository: HeartRailsRepository
+    @Inject lateinit var pixabayRepository: PixabayRepository
 
     override fun onCreate() {
         AndroidInjection.inject(this)
@@ -54,22 +58,13 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
 
         when (geofencingEvent.geofenceTransition) {
             Geofence.GEOFENCE_TRANSITION_ENTER -> {
-                notify("Enter\n$geofences\n$locString")
                 Log.d(TAG, "Enter\n$geofences\n$locString")
-//                resetGeofences(location.latitude, location.longitude)
+                searchGeolocation(location.latitude, location.longitude)
+                // resetGeofences(location.latitude, location.longitude)
             }
-            Geofence.GEOFENCE_TRANSITION_EXIT -> {
-                notify("Exit\n$geofences\n$locString")
-                Log.d(TAG, "Exit\n$geofences\n$locString")
-            }
-            Geofence.GEOFENCE_TRANSITION_DWELL -> {
-                notify("Dwell\n$geofences\n$locString")
-                Log.d(TAG, "Dwell\n$geofences\n$locString")
-            }
-            else -> {
-                notify("unknown event")
-                Log.d(TAG, "unknown event")
-            }
+            Geofence.GEOFENCE_TRANSITION_EXIT  -> Log.d(TAG, "Exit\n$geofences\n$locString")
+            Geofence.GEOFENCE_TRANSITION_DWELL -> Log.d(TAG, "Dwell\n$geofences\n$locString")
+            else                               -> Log.d(TAG, "unknown event")
         }
     }
 
@@ -90,25 +85,63 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
         }
     }
 
-    private fun notify(title: String) {
-        gitHubRepository.getRepos("shiita0903")
+    private fun searchGeolocation(lat: Double, lng: Double) {
+        heartRailsRepository.getGeolocations(lat, lng)
                 .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                         onError = { Log.e(TAG, "onError", it) },
                         onSuccess = {
-                            Log.d(TAG, "onSuccess")
-                            val text = it?.get(0)?.name ?: ""
-                            buildNotification(title, text)
+                            val geolocation = it.first()
+                            searchImage(listOf(geolocation.town, geolocation.city, geolocation.prefecture))
                         }
                 )
     }
 
-    private fun buildNotification(title: String, text: String) {
+    private fun searchImage(queries: List<String>) {
+        pixabayRepository.serarchImage(queries[0])
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                        onError = { Log.e(TAG, "onError", it) },
+                        onSuccess = { imageInfoList ->
+                            if (imageInfoList.isEmpty()) {
+                                if (queries.size > 1) {
+                                    searchImage(queries.drop(1))    // クエリを変えて再検索
+                                }
+                                return@subscribeBy
+                            }
+
+                            val urls = imageInfoList
+                                    .map {
+                                        when {
+                                            it.imageURL.isNotBlank() -> it.imageURL
+                                            else                     -> it.largeImageURL
+                                        }}
+                                    .filter { it.isNotEmpty() }
+                                    .take(5)
+                            notify(urls)
+                        }
+                )
+    }
+
+    private fun notify(urls: List<String>) {
+        val intent = Intent(this, NotificationResultActivity::class.java).apply {
+            putStringArrayListExtra(NotificationResultActivity.URLS, ArrayList(urls))
+        }
+        val stackBuilder = TaskStackBuilder.create(this).apply { addNextIntentWithParentStack(intent) }
+        val pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+
+        buildNotification("Geofence", "Enter", pendingIntent)
+    }
+
+    private fun buildNotification(title: String, text: String, pendingIntent: PendingIntent) {
         val notification = NotificationCompat.Builder(this@GeofenceTransitionsIntentService)
                 .setStyle(NotificationCompat.BigTextStyle())
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(title)
                 .setContentText(text)
+                .setContentIntent(pendingIntent)
                 .build()
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(1111, notification)

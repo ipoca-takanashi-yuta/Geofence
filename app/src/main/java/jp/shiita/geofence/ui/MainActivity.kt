@@ -4,14 +4,20 @@ import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.LocationServices
 import dagger.android.AndroidInjection
@@ -29,10 +35,9 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
     private lateinit var geofencingClient: GeofencingClient
     private var beforePendingIntent: PendingIntent? = null
-    @Inject
-    lateinit var heartRailsRepository: HeartRailsRepository
-    @Inject
-    lateinit var pixabayRepository: PixabayRepository
+
+    @Inject lateinit var heartRailsRepository: HeartRailsRepository
+    @Inject lateinit var pixabayRepository: PixabayRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
@@ -75,42 +80,93 @@ class MainActivity : AppCompatActivity() {
             }
         }
         latlngButton.setOnClickListener {
+            clearView()
+            startLoading()
             heartRailsRepository.getGeolocations(35.648334, 139.721371)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribeBy(
-                            onError = { Log.e(TAG, "onError", it) },
+                            onError = {
+                                Log.e(TAG, "onError", it)
+                                stopLoading()
+                            },
                             onSuccess = {
                                 val geolocation = it.first()
-                                searchImage(geolocation.city)
                                 townInfo.text = geolocation.address
+                                searchImage(listOf(geolocation.town, geolocation.city, geolocation.prefecture))
                             }
                     )
         }
     }
 
-    private fun searchImage(query: String) {
-        pixabayRepository.serarchImage(query)
+    private fun searchImage(queries: List<String>) {
+        pixabayRepository.serarchImage(queries[0])
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
-                        onError = { Log.e(TAG, "onError", it) },
+                        onError = {
+                            Log.e(TAG, "onError", it)
+                            stopLoading()
+                        },
                         onSuccess = { imageInfoList ->
-                            imageInfoList.firstOrNull()?.let {
-                                val url = when {
-                                    !it.imageURL.isEmpty()      -> it.imageURL
-                                    !it.largeImageURL.isEmpty() -> it.largeImageURL
-                                    else                        -> {
+                            if (imageInfoList.isEmpty()) {
+                                when (queries.size) {
+                                    1 -> {
                                         toast("画像が見つかりませんでした")
-                                        return@let
+                                        stopLoading()
                                     }
+                                    else -> searchImage(queries.drop(1))    // クエリを変えて再検索
                                 }
-                                Glide.with(this)
-                                        .load(url)
-                                        .into(townImage)
+                                return@subscribeBy
                             }
+
+                            queryInfo.text = "[検索ワード] : ${queries[0]}"
+                            val urls = imageInfoList
+                                    .map {
+                                        when {
+                                            it.imageURL.isNotBlank() -> it.imageURL
+                                            else                     -> it.largeImageURL
+                                        }}
+                                    .filter { it.isNotEmpty() }
+                                    .take(5)
+                            loadImages(urls)
                         }
                 )
+    }
+
+    private fun loadImages(urls: List<String>) {
+        urls.zip((1..urls.size).map { ImageView(this) }).forEach { (url, imageView) ->
+            Glide.with(this)
+                    .load(url)
+                    .addListener(object : RequestListener<Drawable> {
+                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?,
+                                                  isFirstResource: Boolean) = false
+
+                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?,
+                                                     dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                            stopLoading()
+                            return false
+                        }
+                    })
+                    .into(imageView)
+            townImages.addView(imageView)
+        }
+    }
+
+    private fun clearView() {
+        townInfo.text = ""
+        queryInfo.text = ""
+        townImages.removeAllViews()
+    }
+
+    private fun startLoading() {
+        loadingIndicator.visibility = View.VISIBLE
+        latlngButton.isEnabled = false
+    }
+
+    private fun stopLoading() {
+        loadingIndicator.visibility = View.GONE
+        latlngButton.isEnabled = true
     }
 
     private fun Context.toast(text: String) {
