@@ -2,6 +2,8 @@ package jp.shiita.geofence.ui
 
 import android.Manifest
 import android.app.PendingIntent
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
@@ -24,8 +26,10 @@ import jp.shiita.geofence.R
 import jp.shiita.geofence.util.*
 import kotlinx.android.synthetic.main.activity_main.*
 
+
 class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
     private lateinit var geofencingClient: GeofencingClient
+    private lateinit var clipboardManager: ClipboardManager
     private var beforePendingIntent: PendingIntent? = null
     private var location: Location? = null
     private var map: GoogleMap? = null
@@ -35,9 +39,11 @@ class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         geofencingClient = LocationServices.getGeofencingClient(this)
+        clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
 //        val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
 
         (googleMapFragment as SupportMapFragment).getMapAsync(this)
+
         addGeofences.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -97,6 +103,12 @@ class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap?) {
         map = googleMap
+        map?.setOnCircleClickListener { circle ->
+            val center = circle.center
+            val locString = "${center.latitude},${center.longitude}"
+            clipboardManager.primaryClip = ClipData.newPlainText("", locString)
+            showToast("${locString}をコピーしました")
+        }
         plotGeofence()
     }
 
@@ -121,6 +133,7 @@ class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
             .radius(radius)
             .strokeColor(Color.argb(32, 0, 0, 255))
             .fillColor(Color.argb(32, 0, 0, 255))
+            .clickable(true)
 
     companion object {
         private val TAG = MainActivity::class.java.simpleName

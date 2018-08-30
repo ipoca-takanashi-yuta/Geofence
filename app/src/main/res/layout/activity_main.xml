@@ -39,57 +39,6 @@
         android:enabled="false"
         android:text="remove geofences"/>
 
-    <!--<LinearLayout-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:gravity="center_vertical">-->
-
-        <!--<Button-->
-            <!--android:id="@+id/latlngButton"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="位置"/>-->
-
-        <!--<ProgressBar-->
-            <!--android:id="@+id/loadingIndicator"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginLeft="5dp"-->
-            <!--android:layout_marginStart="5dp"-->
-            <!--android:visibility="gone"/>-->
-
-        <!--<LinearLayout-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginLeft="10dp"-->
-            <!--android:layout_marginStart="10dp"-->
-            <!--android:orientation="vertical">-->
-
-            <!--<TextView-->
-                <!--android:id="@+id/townInfo"-->
-                <!--android:layout_width="match_parent"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--tools:text="Town info"/>-->
-
-            <!--<TextView-->
-                <!--android:id="@+id/queryInfo"-->
-                <!--android:layout_width="match_parent"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--tools:text="Query inof"/>-->
-        <!--</LinearLayout>-->
-    <!--</LinearLayout>-->
-
-    <!--<HorizontalScrollView-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent">-->
-
-        <!--<LinearLayout-->
-            <!--android:id="@+id/townImages"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:orientation="horizontal"/>-->
-    <!--</HorizontalScrollView>-->
-
     <fragment
         android:id="@+id/googleMapFragment"
         android:name="com.google.android.gms.maps.SupportMapFragment"
