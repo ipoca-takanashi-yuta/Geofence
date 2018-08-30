@@ -16,11 +16,11 @@ import dagger.android.AndroidInjection
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
-import jp.shiita.geofence.buildNotification
+import jp.shiita.geofence.util.buildNotification
 import jp.shiita.geofence.data.HeartRailsRepository
 import jp.shiita.geofence.data.PixabayRepository
-import jp.shiita.geofence.getGeofencePendingIntent
-import jp.shiita.geofence.getGeofencingRequest
+import jp.shiita.geofence.util.getGeofencePendingIntent
+import jp.shiita.geofence.util.getGeofencingRequest
 import jp.shiita.geofence.ui.NotificationResultActivity
 import java.util.*
 import javax.inject.Inject
@@ -57,6 +57,7 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
         when (geofencingEvent.geofenceTransition) {
             Geofence.GEOFENCE_TRANSITION_ENTER -> {
                 Log.d(TAG, "Enter\n$geofences\n$locString")
+                buildNotification("Enter geofence", locString, null, this)
                 searchGeolocation(location.latitude, location.longitude)
                 resetGeofences(location.latitude, location.longitude)
             }

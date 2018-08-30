@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Geofence</string>
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyDa7QOFR_0vRvjluy8j-hLVTmydoOhPE5U</string>
 </resources>

@@ -1,4 +1,4 @@
-package jp.shiita.geofence
+package jp.shiita.geofence.util
 
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -8,6 +8,7 @@ import android.support.v4.app.NotificationCompat
 import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
+import jp.shiita.geofence.R
 import jp.shiita.geofence.service.GeofenceTransitionsIntentService
 import java.util.*
 
@@ -15,21 +16,22 @@ import java.util.*
  * Created by Yuta Takanashi on 2018/08/17.
  */
 fun getGeofencePendingIntent(context: Context): PendingIntent =
-    PendingIntent.getService(context, 0,
+    PendingIntent.getService(context, Random().nextInt(),
             Intent(context, GeofenceTransitionsIntentService::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT)
 
 fun getGeofencingRequest(tag: String, lat: Double, lng: Double, context: Context): GeofencingRequest {
     val (geofences, locations) = getGeofenceList(lat, lng, context)
+    writeLocations(context, locations)
     val info = locations.mapIndexed { i, (la, ln) -> "Geofence${i + 1}:($la, $ln)" }.joinToString(separator = "\n")
-    Log.d(tag, "[Add geofences]\n$info")
+    Log.d(tag, "Add geofences\n$info")
     return GeofencingRequest.Builder()
             .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
             .addGeofences(geofences)
             .build()
 }
 
-private fun getGeofenceList(lat: Double, lng: Double, context: Context, d: Double = 0.02, r: Float = 100f): Pair<List<Geofence>, List<Pair<Double, Double>>> {
+private fun getGeofenceList(lat: Double, lng: Double, context: Context, d: Double = 0.002, r: Float = 100f): Pair<List<Geofence>, List<Pair<Double, Double>>> {
     val dLat = arrayOf(d, 0.00, -d, 0.00)
     val dLng = arrayOf(0.00, d, 0.00, -d)
     return dLat.zip(dLng).mapIndexed { i, (la, ln) ->
