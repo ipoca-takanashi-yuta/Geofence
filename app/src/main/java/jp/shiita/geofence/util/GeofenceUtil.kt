@@ -29,7 +29,7 @@ fun getBeforeGeofencePendingIntent(context: Context): PendingIntent =
                 PendingIntent.FLAG_UPDATE_CURRENT)
 
 fun getGeofencingRequest(tag: String, lat: Double, lng: Double, context: Context): GeofencingRequest {
-    val (geofences, locations) = getGeofenceList(lat, lng, context, 0.002, 100f)
+    val (geofences, locations) = getGeofenceList(lat, lng, 0.002, 100f)
     writeLocations(context, locations, 100f)
     val info = locations.mapIndexed { i, (la, ln) -> "Geofence${i + 1}:($la, $ln)" }.joinToString(separator = "\n")
     Log.d(tag, "Add geofences\n$info")
@@ -39,13 +39,12 @@ fun getGeofencingRequest(tag: String, lat: Double, lng: Double, context: Context
             .build()
 }
 
-private fun getGeofenceList(lat: Double, lng: Double, context: Context, d: Double, r: Float): Pair<List<Geofence>, List<Pair<Double, Double>>> {
+private fun getGeofenceList(lat: Double, lng: Double, d: Double, r: Float): Pair<List<Geofence>, List<Pair<Double, Double>>> {
     val dLat = arrayOf(d, 0.00, -d, 0.00)
     val dLng = arrayOf(0.00, d, 0.00, -d)
     return dLat.zip(dLng).mapIndexed { i, (la, ln) ->
         val cLat = lat + la
         val cLng = lng + ln
-        buildNotification("Add geofence", "($cLat, $cLng)", null, context)
         Geofence.Builder()
                 .setRequestId("Geofence${i + 1}")
                 .setCircularRegion(cLat, cLng, r)
