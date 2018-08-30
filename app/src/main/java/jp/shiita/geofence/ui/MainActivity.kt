@@ -1,7 +1,6 @@
 package jp.shiita.geofence.ui
 
 import android.Manifest
-import android.app.PendingIntent
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.pm.PackageManager
@@ -30,7 +29,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
     private lateinit var geofencingClient: GeofencingClient
     private lateinit var clipboardManager: ClipboardManager
-    private var beforePendingIntent: PendingIntent? = null
     private var location: Location? = null
     private var map: GoogleMap? = null
 
@@ -44,6 +42,10 @@ class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
 
         (googleMapFragment as SupportMapFragment).getMapAsync(this)
 
+        if (readLocations(this).first.isNotEmpty()) {
+            addGeofences.isEnabled = false
+            removeGeofences.isEnabled = true
+        }
         addGeofences.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -63,8 +65,9 @@ class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
             val lat = latEdit.text.toString().toDoubleOrNull() ?: 35.648334
             val lng = lngEdit.text.toString().toDoubleOrNull() ?: 139.721371
 
-            beforePendingIntent = getGeofencePendingIntent(this)
-            geofencingClient.addGeofences(getGeofencingRequest(TAG, lat, lng, this), beforePendingIntent)?.run {
+            geofencingClient.addGeofences(
+                    getGeofencingRequest(TAG, lat, lng, this),
+                    getGeofencePendingIntent(this))?.run {
                 addOnSuccessListener {
                     showToast("addOnSuccess")
                     plotGeofence()
@@ -77,7 +80,7 @@ class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
             }
         }
         removeGeofences.setOnClickListener {
-            geofencingClient.removeGeofences(beforePendingIntent)?.run {
+            geofencingClient.removeGeofences(getBeforeGeofencePendingIntent(this))?.run {
                 addOnSuccessListener {
                     showToast("removeOnSuccess")
                     eraseGeofence()
@@ -113,12 +116,12 @@ class MainActivity : AppCompatActivity(), LocationListener, OnMapReadyCallback {
     }
 
     private fun plotGeofence() {
-        val locations = readLocations(this)
+        val (locations, radius) = readLocations(this)
         if (locations.isEmpty()) return
         val center = locations.unzip().run { first.average() to second.average() }
         map?.let { m ->
             locations.map { LatLng(it.first, it.second) }
-                    .forEach { m.addCircle(getCircle(it, 100.0)) }
+                    .forEach { m.addCircle(getCircle(it, radius.toDouble())) }
             m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(center.first, center.second), 16f))
         }
     }

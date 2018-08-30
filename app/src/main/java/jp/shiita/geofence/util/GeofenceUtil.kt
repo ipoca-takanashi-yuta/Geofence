@@ -15,14 +15,22 @@ import java.util.*
 /**
  * Created by Yuta Takanashi on 2018/08/17.
  */
-fun getGeofencePendingIntent(context: Context): PendingIntent =
-    PendingIntent.getService(context, Random().nextInt(),
+fun getGeofencePendingIntent(context: Context): PendingIntent {
+    val code = Random().nextInt()
+    writeRequestCode(context, code)
+    return PendingIntent.getService(context, code,
             Intent(context, GeofenceTransitionsIntentService::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT)
+}
+
+fun getBeforeGeofencePendingIntent(context: Context): PendingIntent =
+        PendingIntent.getService(context, readRequestCode(context),
+                Intent(context, GeofenceTransitionsIntentService::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT)
 
 fun getGeofencingRequest(tag: String, lat: Double, lng: Double, context: Context): GeofencingRequest {
-    val (geofences, locations) = getGeofenceList(lat, lng, context)
-    writeLocations(context, locations)
+    val (geofences, locations) = getGeofenceList(lat, lng, context, 0.002, 100f)
+    writeLocations(context, locations, 100f)
     val info = locations.mapIndexed { i, (la, ln) -> "Geofence${i + 1}:($la, $ln)" }.joinToString(separator = "\n")
     Log.d(tag, "Add geofences\n$info")
     return GeofencingRequest.Builder()
@@ -31,7 +39,7 @@ fun getGeofencingRequest(tag: String, lat: Double, lng: Double, context: Context
             .build()
 }
 
-private fun getGeofenceList(lat: Double, lng: Double, context: Context, d: Double = 0.002, r: Float = 100f): Pair<List<Geofence>, List<Pair<Double, Double>>> {
+private fun getGeofenceList(lat: Double, lng: Double, context: Context, d: Double, r: Float): Pair<List<Geofence>, List<Pair<Double, Double>>> {
     val dLat = arrayOf(d, 0.00, -d, 0.00)
     val dLng = arrayOf(0.00, d, 0.00, -d)
     return dLat.zip(dLng).mapIndexed { i, (la, ln) ->

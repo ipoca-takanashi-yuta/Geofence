@@ -16,12 +16,13 @@ import dagger.android.AndroidInjection
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
-import jp.shiita.geofence.util.buildNotification
 import jp.shiita.geofence.data.HeartRailsRepository
 import jp.shiita.geofence.data.PixabayRepository
+import jp.shiita.geofence.ui.NotificationResultActivity
+import jp.shiita.geofence.util.buildNotification
+import jp.shiita.geofence.util.getBeforeGeofencePendingIntent
 import jp.shiita.geofence.util.getGeofencePendingIntent
 import jp.shiita.geofence.util.getGeofencingRequest
-import jp.shiita.geofence.ui.NotificationResultActivity
 import java.util.*
 import javax.inject.Inject
 
@@ -31,7 +32,6 @@ import javax.inject.Inject
  */
 class GeofenceTransitionsIntentService : IntentService("Geofence") {
     private lateinit var geofencingClient: GeofencingClient
-    private var beforePendingIntent: PendingIntent? = null
 
     @Inject lateinit var heartRailsRepository: HeartRailsRepository
     @Inject lateinit var pixabayRepository: PixabayRepository
@@ -69,15 +69,15 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
 
     private fun resetGeofences(lat: Double, lng: Double) {
         Log.d(TAG, "reset geofences")
-        if (beforePendingIntent != null) {
-            geofencingClient.removeGeofences(beforePendingIntent)?.run {
-                addOnSuccessListener { Log.d(TAG, "removeOnSuccess") }
-                addOnFailureListener { Log.d(TAG, "removeOnFailure") }
-            }
+        geofencingClient.removeGeofences(getBeforeGeofencePendingIntent(this))?.run {
+            addOnSuccessListener { Log.d(TAG, "removeOnSuccess") }
+            addOnFailureListener { Log.d(TAG, "removeOnFailure") }
         }
-        beforePendingIntent = getGeofencePendingIntent(this)
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            geofencingClient.addGeofences(getGeofencingRequest(TAG, lat, lng, this), beforePendingIntent)?.run {
+            geofencingClient.addGeofences(
+                    getGeofencingRequest(TAG, lat, lng, this),
+                    getGeofencePendingIntent(this))?.run {
                 addOnSuccessListener { Log.d(TAG, "addOnSuccess") }
                 addOnFailureListener { Log.d(TAG, "addOnFailure") }
             }
