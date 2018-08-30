@@ -27,7 +27,7 @@ fun readLocations(context: Context): Pair<List<Pair<Double, Double>>, Float> {
                     .toPair()
         }
         val radius = getFloat("radius", 0f)
-        return (if (locations.isEmpty()) emptyList() else locations) to radius
+        return locations to radius
     }
 }
 

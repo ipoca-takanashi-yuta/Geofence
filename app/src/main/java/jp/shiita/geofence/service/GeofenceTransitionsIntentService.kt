@@ -50,7 +50,7 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
             return
         }
 
-        val geofences = geofencingEvent.triggeringGeofences.map { it.requestId }.joinToString(separator = "\n")
+        val geofences = geofencingEvent.triggeringGeofences.joinToString(separator = "\n") { it.requestId }
         val location = geofencingEvent.triggeringLocation
         val locString = "(${location.latitude}, ${location.longitude})"
 
