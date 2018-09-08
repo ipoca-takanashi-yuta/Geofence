@@ -2,7 +2,7 @@ package jp.shiita.geofence
 
 import dagger.android.AndroidInjector
 import dagger.android.DaggerApplication
-import jp.shiita.geofence.component.DaggerAppComponent
+import jp.shiita.geofence.di.DaggerAppComponent
 
 /**
  * Created by Yuta Takanashi on 2018/08/17.

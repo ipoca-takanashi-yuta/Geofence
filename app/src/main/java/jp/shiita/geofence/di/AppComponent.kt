@@ -1,13 +1,10 @@
-package jp.shiita.geofence.component
+package jp.shiita.geofence.di
 
 import dagger.BindsInstance
 import dagger.Component
 import dagger.android.AndroidInjector
 import dagger.android.support.AndroidSupportInjectionModule
 import jp.shiita.geofence.GeofenceApplication
-import jp.shiita.geofence.module.ApiModule
-import jp.shiita.geofence.module.ActivityBuilderModule
-import jp.shiita.geofence.module.ServiceBuilderModule
 import javax.inject.Singleton
 
 /**
