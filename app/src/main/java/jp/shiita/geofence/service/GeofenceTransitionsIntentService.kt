@@ -32,7 +32,6 @@ import javax.inject.Inject
  */
 class GeofenceTransitionsIntentService : IntentService("Geofence") {
     private lateinit var geofencingClient: GeofencingClient
-
     @Inject lateinit var heartRailsRepository: HeartRailsRepository
     @Inject lateinit var pixabayRepository: PixabayRepository
 
@@ -53,17 +52,27 @@ class GeofenceTransitionsIntentService : IntentService("Geofence") {
         val geofences = geofencingEvent.triggeringGeofences.joinToString(separator = "\n") { it.requestId }
         val location = geofencingEvent.triggeringLocation
         val locString = "(${location.latitude}, ${location.longitude})"
+        buildNotification("onHandleIntent", locString, null, this)
 
         when (geofencingEvent.geofenceTransition) {
             Geofence.GEOFENCE_TRANSITION_ENTER -> {
                 Log.d(TAG, "Enter\n$geofences\n$locString")
                 buildNotification("Enter geofence", locString, null, this)
-                searchGeolocation(location.latitude, location.longitude)
+//                searchGeolocation(location.latitude, location.longitude)
                 resetGeofences(location.latitude, location.longitude)
             }
-            Geofence.GEOFENCE_TRANSITION_EXIT  -> Log.d(TAG, "Exit\n$geofences\n$locString")
-            Geofence.GEOFENCE_TRANSITION_DWELL -> Log.d(TAG, "Dwell\n$geofences\n$locString")
-            else                               -> Log.d(TAG, "unknown event")
+            Geofence.GEOFENCE_TRANSITION_EXIT  -> {
+                Log.d(TAG, "Exit\n$geofences\n$locString")
+                buildNotification("Exit geofence", locString, null, this)
+            }
+            Geofence.GEOFENCE_TRANSITION_DWELL -> {
+                Log.d(TAG, "Dwell\n$geofences\n$locString")
+                buildNotification("Dwell geofence", locString, null, this)
+            }
+            else -> {
+                Log.d(TAG, "Unknown event")
+                buildNotification("Unknown event", locString, null, this)
+            }
         }
     }
 
